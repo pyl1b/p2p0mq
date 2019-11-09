@@ -22,7 +22,8 @@ VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    # 'requests', 'maya', 'records',
+    'pyzmq',
+    'u-msgpack-python',
 ]
 
 # What packages are optional?
@@ -135,7 +136,6 @@ setup(
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
-        'Environment :: Console',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
