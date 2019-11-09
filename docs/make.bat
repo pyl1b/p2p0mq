@@ -27,7 +27,7 @@ if errorlevel 9009 (
 	echo.http://sphinx-doc.org/
 	exit /b 1
 )
-%SPHINXAPIDOC% -o ./ ../enhterm
+%SPHINXAPIDOC% -o ./ ../p2p0mq
 %SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
 goto end
 
