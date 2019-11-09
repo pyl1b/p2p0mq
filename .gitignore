@@ -109,3 +109,7 @@ virtualenv/
 setup.bat
 playground/
 .idea/
+~*
+*~
+*.bak
+*.swp
