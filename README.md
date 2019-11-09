@@ -1,7 +1,7 @@
 # p2p0mq
 
 p2p0mq is an [open source](https://github.com/pyl1b/p2p0mq.git),
-MIT licensed, [Cmd-based](https://docs.python.org/3/library/cmd.html)
+MIT licensed, [0mq-based](https://zeromq.org/)
 library for creating peer-to-peer networks.
 
 [![Build Status](https://travis-ci.org/pyl1b/p2p0mq.svg?branch=master)](https://travis-ci.org/pyl1b/p2p0mq)
