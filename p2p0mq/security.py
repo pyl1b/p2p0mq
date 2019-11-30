@@ -1,5 +1,47 @@
 # -*- coding: utf-8 -*-
 """
+Security related settings and actions are grouped in a
+distinct class. Current implementation merges the manager into
+the :ref:`application class<top_level_management>`.
+
+The security manager is initialized using :meth:`~SecurityManager.start_auth`
+which is a no-op if :py:attr:`~SecurityManager.no_encryption` is `True`.
+It's main role is to start the
+`authenticator thread <https://pyzmq.readthedocs.io/en/latest/api/zmq.auth.thread.html>`_.
+While :meth:`~SecurityManager.start_auth` will initialize the thread to read
+existing certificates in :py:attr:`~SecurityManager.public_cert_dir`, please
+note that any certificates added later will not be acknowledged until
+`SecurityManager.auth_thread.configure_curve() <https://pyzmq.readthedocs.io/en/latest/api/zmq.auth.thread.html#zmq.auth.thread.ThreadAuthenticator.configure_curve>`_
+gets called.
+
+Terminating the manager through :meth:`~SecurityManager.terminate_auth`
+will stop the  authenticator thread, if any.
+
+Cert Store
+----------
+
+Certificates on the file system are organized in a "store". Public
+directory stores the certificates of other peers while the private directory
+contains certificates of peers running on the local machine.
+
+The names of the certificates are always the same as the uuid of the peer,
+with the extension being either `key` for public certificates or
+`key_secret` for private certificates.
+
+The class implements some helper methods for dealing with the certificates store:
+
+* :meth:`~SecurityManager.prepare_cert_store` creates the directory structure \
+and uses
+* :meth:`~SecurityManager.cert_pair_check_gen` to either \
+read or create certificates for current peer;
+* :meth:`~SecurityManager.cert_file_by_uuid` will compute the path towards \
+the certificate corresponding to that uuid; it is used in
+* :meth:`~SecurityManager.cert_key_by_uuid` which parses the content of the \
+file and reads the key;
+* :meth:`~SecurityManager.exchange_certificates` is mostly of use for testing \
+but offers some hints about what the user should do to securely connect \
+two peers using certificates.
+
 """
 from __future__ import unicode_literals
 from __future__ import print_function
@@ -20,13 +62,50 @@ logger = logging.getLogger('p2p0mq.sec')
 class SecurityManager(object):
     """
     Manages the security related settings and actions.
+
+    Attributes:
+        private_cert_dir (str):
+            The path towards the directory that stores private certificates.
+        public_cert_dir (str):
+            The path towards the directory that stores public certificates.
+        temp_cert_dir (str):
+            The path towards the temporary directory (used for generating
+            new certificates). If not provided, it defaults to system's
+            temporary directory.
+        no_encryption (bool):
+            Enable or disable encryption at peer level. Peers that use
+            encryption can only connect to other peers that use encryption
+            and vice-versa.
+        public_file (str):
+            The path towards the public certificate of this peer.
+        private_file (str):
+            The path towards the private certificate of this peer.
+        auth_thread (ThreadAuthenticator):
+            A separate thread used by zmq to authenticate our peers.
+
     """
     def __init__(self,
                  private_cert_dir, public_cert_dir,
                  temp_cert_dir=None,
                  no_encryption=False,
                  *args, **kwargs):
-        """ Constructor. """
+        """
+        Constructor.
+
+        Arguments:
+            private_cert_dir (str):
+                The path towards the directory that stores private
+                certificates.
+            public_cert_dir (str):
+                The path towards the directory that stores public certificates.
+            temp_cert_dir (str):
+                The path towards the temporary directory (used for generating
+                new certificates). Defaults to system's temporary directory.
+            no_encryption (bool):
+                Enable or disable encryption at peer level. Peers that use
+                encryption can only connect to other peers that use encryption
+                and vice-versa.
+        """
         super(SecurityManager, self).__init__(*args, **kwargs)
         self.private_cert_dir = private_cert_dir
         self.public_cert_dir = public_cert_dir
@@ -46,7 +125,13 @@ class SecurityManager(object):
         self.auth_thread = None
 
     def start_auth(self, context):
-        """ Starts the authentication thread if encryption is enabled. """
+        """
+        Starts the authentication thread if encryption is enabled.
+
+        Arguments:
+            context (zmq.Context):
+                The context where the authentication thread will belong.
+        """
         if not self.no_encryption:
             logger.debug("Authenticator thread is being started")
             self.auth_thread = ThreadAuthenticator(
@@ -64,10 +149,12 @@ class SecurityManager(object):
         Ends the authentication thread if encryption is enabled.
 
         This method should be written defensively, as the environment
-        might not be fully set (an exception in create() does not prevent
+        might not be fully set (an exception in
+        :meth:`p2p0mq.app.theapp.TheApp.create` does not prevent
         this method from being executed).
         """
         if self.auth_thread is not None:
+            logger.debug("Authenticator thread is being stopped")
             self.auth_thread.stop()
             self.auth_thread = None
 
@@ -75,6 +162,10 @@ class SecurityManager(object):
         """
         Prepares the directory structure before it can
         be used by our authentication system.
+
+        Arguments:
+            uuid:
+                The unique identification of local peer.
         """
 
         if not os.path.isdir(self.private_cert_dir):
@@ -88,7 +179,14 @@ class SecurityManager(object):
             self.cert_pair_check_gen(uuid)
 
     def cert_pair_check_gen(self, uuid):
-        """ Checks if the certificates exist. Generates them if they don't. """
+        """
+        Checks if the certificates exist. Generates them if they don't.
+
+        Arguments:
+            uuid:
+                The unique identification of the peer. Usually, this is
+                the local peer.
+        """
         cert_pub = self.cert_file_by_uuid(uuid, public=True)
         cert_prv = self.cert_file_by_uuid(uuid, public=False)
         pub_exists = os.path.isfile(cert_pub)
@@ -126,6 +224,14 @@ class SecurityManager(object):
         """
         Computes the path of a certificate inside the certificate store
         based on the name of the peer.
+
+        Arguments:
+            uuid:
+                The unique identification of the peer. Usually, this is
+                the local peer.
+            public (bool):
+                If True it retrieves the path of the public certificate,
+                if False it retrieves the path of the private certificate.
         """
         if isinstance(uuid, bytes):
             uuid = uuid.decode('utf-8')
@@ -136,7 +242,17 @@ class SecurityManager(object):
         )
 
     def cert_key_by_uuid(self, uuid, public=True):
-        """ Reads the key from corresponding certificate file. """
+        """
+        Reads the key from corresponding certificate file.
+
+        Arguments:
+            uuid:
+                The unique identification of the peer. Usually, this is
+                the local peer.
+            public (bool):
+                If True it retrieves the public key,
+                if False it retrieves the private key.
+        """
         file = self.cert_file_by_uuid(uuid=uuid, public=public)
         logger.debug("%s certificate for uuid %s is loaded from %s",
                      'Public' if public else 'Private',
@@ -147,22 +263,18 @@ class SecurityManager(object):
         return public_key if public else secret_key
 
     def exchange_certificates(self, other):
-        """ Copies the certificates so that the two instances can
-        authenticate themselves to each other. """
+        """
+        Copies the certificates so that the two instances can
+        authenticate themselves to each other.
+
+        Arguments:
+            other (SecurityManager):
+                The security manager of the other peer.
+        """
         shutil.copy(
             self.public_file,
             os.path.join(other.public_cert_dir,
                          os.path.basename(self.public_file))
-        )
-        shutil.copy(
-            self.public_file,
-            os.path.join(other.public_cert_dir,
-                         os.path.basename(self.public_file))
-        )
-        shutil.copy(
-            other.public_file,
-            os.path.join(self.public_cert_dir,
-                         os.path.basename(other.public_file))
         )
         shutil.copy(
             other.public_file,
