@@ -1,5 +1,64 @@
 # -*- coding: utf-8 -*-
 """
+Peer information is managed by a "store" that uses
+sqlite as backend for persistence.
+Current implementation merges the store into
+the :ref:`application class<top_level_management>`.
+
+The class also stores the uuid of the "local peer" (the unique identifier
+other peers use to indicate this peer). While most of the times this will
+be a proper uuid4, other strings can be used. The class stores the
+value as bytes, with string converted to bytes by the
+:py:attr:`~PeerStore.uuid` property using the UTF-8 encoding.
+The identifier should be at least four (4) characters long in this case.
+If no uuid is present then `uuid.uuid4().hex` will be used to generate one
+in :meth:`~PeerStore.create_meta_table`.
+
+Code can add and remove peers using the dedicated methods:
+:meth:`~PeerStore.add_peer` and :meth:`~PeerStore.take_peer`. If you are
+subclassing this class note that these methods are NOT called when the
+database discovers new peers in the database.
+
+Convenience properties to generate list of peers based on their status are
+provided: :py:attr:`~PeerStore.peers_in_initial_state`,
+:py:attr:`~PeerStore.peers_connected`, :py:attr:`~PeerStore.peers_routed`,
+:py:attr:`~PeerStore.peers_unreachable`
+
+Database
+--------
+
+The initialization of the store is done using the :meth:`~PeerStore.start_db`,
+where the database is read (or created) and synced for the first time.
+
+Metadata table is only read once, at :meth:`~PeerStore.start_db` time.
+If the metadata table(*p2p0mq_meta*) does not exist, the database is assumed
+to be new, so :meth:`~PeerStore.create_meta_table` is used to initialize
+it. Meta-variables stored at that time are:
+
+* *uuid*: the id of the peer; only a single peer can be stored in a database; \
+if the value is `None` a new uuid is allocated at this point;
+* *db_created*: the value of the :py:attr:`~PeerStore.db_created` is updated \
+to current time and this value is stored in the database.
+
+If a meta-table exists then all key-value pairs are read and attributes
+for each are set in the store instance (includes *uuid* and *db_created*).
+
+The store merges the content of the *p2p0mq_peers* table in
+the database with the memory list of peers from time to time.
+Peers existing only in memory are saved to the database
+and peers from the database are constructed and used. The user can
+add peers to the database and they will be added to the list
+automatically.
+
+Note that this class does nothing to contact these peers.
+That is the responsibility of the concerns.
+
+The information stored in the peers table is:
+
+* *peer_id*: a unique database identifier (:py:attr:`p2p0mq.peer.Peer.db_id`)
+* *uuid*: a unique zmq identifier for the peer (:py:attr:`p2p0mq.peer.Peer.uuid`)
+* *host*: the host part of the address (:py:attr:`p2p0mq.peer.Peer.host`)
+* *port*: the port where we should contact this peer (:py:attr:`p2p0mq.peer.Peer.port`)
 """
 from __future__ import unicode_literals
 from __future__ import print_function
@@ -23,9 +82,27 @@ SQLITE_META_TABLE = 'p2p0mq_meta'
 
 class PeerStore(object):
     """
-    Given an sqlite database, read it from time to time
-    and merge the settings found there with the ones found
-    in memory.
+    List of peers we know of.
+
+    Attributes:
+        db_file_path (str):
+            The path of the local sqlite database used for peer
+            persistence, among others.
+        peers (dict):
+            The peers we know of, with keys being the unique identifier
+            of the peer and values being :class:`p2p0mq.peer.Peer` instances.
+        peers_lock (threading.Lock):
+            Use the peers attribute only after you have acquired this lock.
+        next_peer_db_sync_time (float):
+            time (in seconds since the Epoch) when next database sync should
+            take place.
+        _uuid:
+            Unique identifier of the local peer.
+            Use :py:attr:`~p2p0mq.peer_store.PeerStore.uuid`
+            property to access and change this member.
+        db_created (float):
+            The time (in seconds since the Epoch) when the database
+            has been created.
     """
     def __init__(self, db_file_path=None, app_uuid=None, *args, **kwargs):
         """ Constructor. """
@@ -47,6 +124,7 @@ class PeerStore(object):
 
     @property
     def uuid(self):
+        """ Unique identifier for this peer. """
         return self._uuid
 
     @uuid.setter
@@ -98,7 +176,7 @@ class PeerStore(object):
                     if peer.state_unreachable]
 
     def start_db(self):
-        """ Called when an app is doen with this instance. """
+        """ Called when an app is done with this instance. """
         self.read_metadata()
         assert self.uuid is not None
         self.sync_database(force=True)
@@ -108,7 +186,8 @@ class PeerStore(object):
         Called when an app is done with this instance.
 
         This method should be written defensively, as the environment
-        might not be fully set (an exception in create() does not prevent
+        might not be fully set (an exception in
+        :meth:`p2p0mq.app.theapp.TheApp.create` does not prevent
         this method from being executed).
         """
         pass
