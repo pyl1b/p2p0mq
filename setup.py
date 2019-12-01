@@ -35,7 +35,8 @@ EXTRAS = {
         'sphinx',
         'sphinx_rtd_theme',
         'recommonmark',
-        'm2r'
+        'm2r',
+        'coverage'
     ],
     'tests': [
         'mock',

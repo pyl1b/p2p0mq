@@ -14,7 +14,7 @@ logger = logging.getLogger('p2p0mq.thread')
 
 class KoThread(threading.Thread):
     """
-    A thread that defines  entry, execute and exit.
+    A thread that defines entry, execute and exit.
     """
     def __init__(self, *args, **kwargs):
         """ Constructor. """

@@ -141,6 +141,10 @@ class Sender(KoNetThread):
         - we tell the handler (Concern class) that we could not send it (
         by default the handler will give us back the same message to
         put it back in the queue until the message expires).
+
+        Returns:
+            The message to be enqueueud or None. This is not a
+            `(PRIORITY, message)` format.
         """
         try:
             logger.log(TRACE_NET, "encoding message for wire: %r", message)
@@ -159,9 +163,10 @@ class Sender(KoNetThread):
             if message.time_to_live < self.app.tick:
                 # Inform the handler that the message is being dropped.
                 message.handler.message_dropped(message)
-
-            # Inform the handler that the message could not be send.
-            return message.handler.send_failed(message, exc)
+                return None
+            else:
+                # Inform the handler that the message could not be send.
+                return message.handler.send_failed(message, exc)
 
     def execute_queue(self, queue):
         """

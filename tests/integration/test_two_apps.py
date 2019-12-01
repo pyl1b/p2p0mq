@@ -38,7 +38,6 @@ logging.getLogger('p2p0mq.concerns').setLevel(logging.WARNING)
 # logging.getLogger('p2p0mq.app.c').setLevel(1)
 
 
-
 def make_app(tag, no_encryption=True):
     label = '%d~%d~%d~%d' % (tag, tag, tag, tag)
     app = TheApp(
@@ -60,6 +59,7 @@ def make_app(tag, no_encryption=True):
 
 
 def end_app(app):
+
     app.stop.set()
     if app.is_alive():
         app.join()

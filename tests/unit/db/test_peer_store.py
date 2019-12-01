@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 from time import time, sleep
 
 from p2p0mq.constants import SYNC_DB_INTERVAL
-from p2p0mq.db.peer_store import PeerStore, SQLITE_PEERS_TABLE, SQLITE_META_TABLE
+from p2p0mq.peer_store import PeerStore, SQLITE_PEERS_TABLE, SQLITE_META_TABLE
 from p2p0mq.peer import Peer
 
 logger = logging.getLogger('tests.p2p0mq.db')

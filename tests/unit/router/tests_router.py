@@ -10,7 +10,6 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 from p2p0mq.concerns.ask_around import AskAroundConcern
-from p2p0mq.concerns.manager import ConcernsManager
 from p2p0mq.message import Message
 from p2p0mq.message_queue.slow import SlowMessageQueue
 from p2p0mq.router import Router

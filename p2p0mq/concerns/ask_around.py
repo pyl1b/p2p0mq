@@ -27,10 +27,21 @@ class AskAroundConcern(Concern):
             name="ask around", command_id=b'r', *args, **kwargs)
 
     def compose_ask_around_message(self, peer, exclude, breadcrumbs=None):
-        """ Creates a message asking about a peer's whereabouts. """
+        """
+        Creates a message asking about a peer's whereabouts.
+
+        Arguments:
+            peer (Peer):
+                The peer we're interested in
+            exclude:
+                The list of peers we should not ask about it.
+            breadcrumbs:
+                The path the message took to reach us.
+        """
         if peer.next_ask_around_time is not None:
             if peer.next_ask_around_time < self.app.tick:
                 return []
+
         peer.next_ask_around_time = self.app.tick + ASK_AROUND_INTERVAL
         peer.last_ask_around_time = self.app.tick
         if breadcrumbs is None:

@@ -11,24 +11,34 @@ logger = logging.getLogger('p2p0mq.concern')
 
 class Concern(object):
     """
-    The concerns deal with messages on both side of the connection.
+    Base class for concerns.
 
-    Each concern has a command identification and, thus, can only handle
-    exactly one command. The parameter is set in the constructor and
-    should be kept constant after the instance has been made part of the
-    application via start().
-
-    Once the application hs been started the main loop will call execute()
-    on the concern on each loop in the context of the app thread.
-    The concern is free to add messages to application queue but
-    it should not send them directly.
-
-    The application builds maps for concerns so that, when a request or
-    reply arrives the appropriate method will be called in the context
-    of the sender/receiver thread.
+    Attributes:
+        command_id (bytes):
+            A unique command id used as part of the messages initiated
+            by this concern. Same id is used both for requests and replies.
+        name (str):
+            Human readable name of this concern.
+        app (ConcernsManager):
+            The manager where this concern is installed.
     """
-    def __init__(self, app, name, command_id, *args, **kwargs):
-        """ Constructor. """
+    def __init__(self, name, command_id, app=None, *args, **kwargs):
+        """
+        Constructor.
+
+        Arguments:
+            command_id (bytes):
+                A unique command id used as part of the messages initiated
+                by this concern. Same id is used both for requests and replies.
+            name (str):
+                Human readable name of this concern.
+            app (ConcernsManager):
+                The manager where this concern is installed. As it will
+                be set in :meth:`~p2p0mq.concerns.manager.ConcernsManager.add_concern`
+                (so available by the time :meth:`~p2p0mq.concerns.base.Concern.start`
+                is called), this argument is only useful if initialization
+                code needs access to the manager.
+        """
         super(Concern, self).__init__(*args, **kwargs)
         self.app = app
         self.command_id = command_id
@@ -39,9 +49,24 @@ class Concern(object):
 
     def start(self):
         """
-        Called from application before entering main loop.
+        Called by the :class:`~p2p0mq.concerns.manager.ConcernsManager`
+        to inform the concern that it was installed.
 
-        The sender and the receiver were not started at this point.
+        .. note:
+
+        For concerns installed before the application has been started
+        this method is called before entering main loop.
+        The sender and the receiver are not started at that time.
+        """
+        pass
+
+    def terminate(self):
+        """
+        Called by the :class:`~p2p0mq.concerns.manager.ConcernsManager`
+        to inform the concern that it was uninstalled.
+
+        At this point main loop has been exited and
+        the receiver and the sender have been stopped.
         """
         pass
 
@@ -49,44 +74,72 @@ class Concern(object):
         """ Called from application thread on each thread loop. """
         pass
 
-    def terminate(self):
-        """
-        Called from application thread after main loop has been exited.
-
-        The receiver and the sender have been stopped at this point.
-        """
-        pass
-
     def process_request(self, message):
-        """ Handler on the receiver side for requests. """
+        """
+        Handler on the receiver side for requests.
+
+        Arguments:
+            message (Message):
+                The message that has been received.
+        """
         raise NotImplementedError
 
     def process_reply(self, message):
-        """ Handler on the sender side for replies. """
+        """
+        Handler on the sender side for replies.
+
+        Arguments:
+            message (Message):
+                The message that has been received.
+        """
         raise NotImplementedError
-
-    def send_failed(self, message, exc=None):
-        """
-        We are informed that one of our messages failed to send.
-
-        This call is made in the context of the sending thread.
-
-        Return the message to be re-queued (can be same message).
-        """
-        return None
 
     def message_sent(self, message):
         """
         We are informed that one of our messages was sent.
 
         This call is made in the context of the sending thread.
+
+        Arguments:
+            message (Message):
+                The message that was send.
         """
         pass
+
+    def send_failed(self, message, exc=None):
+        """
+        We are informed that one of our messages failed to send.
+
+        This call is made in the context of the sending thread
+        and only if the time-to-live of the message has not been expired.
+        Otherwise, a call to :meth:`~message_dropped` is made.
+
+        By returning the same message the concern essentially implements a
+        retry-until-expires mechanism.
+
+        Arguments:
+            message (Message):
+                The message that failed to send.
+            exc (Exception):
+                The exception that was raised, if any.
+
+        Returns:
+             the message to be re-queued (can be the same message).
+             This is NOT a `(PRIORITY, message)` type of reply.
+        """
+        return None
 
     def message_dropped(self, message):
         """
         We are informed that one of our messages was dropped.
 
-        This call is made in the context of the sending thread.
+        This call is made in the context of the sending thread when
+        the time-to-live of the message has expired. Unlike
+        :meth:`~send_failed`, this method cannot return a message
+        to be re-queued.
+
+        Arguments:
+            message (Message):
+                The message that was send.
         """
         pass

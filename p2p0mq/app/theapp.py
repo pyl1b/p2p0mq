@@ -12,19 +12,18 @@ from zmq.utils.monitor import recv_monitor_message
 
 from ..router import Router
 from ..constants import MESSAGE_TYPE_REQUEST, MESSAGE_TYPE_REPLY, TRACE_FUNC, LOOP_CONTINUE, MESSAGE_TYPE_ROUTE, \
-    TRACE_NET
+    TRACE_NET, STABILIZE_TIMEOUT
 from ..concerns.manager import ConcernsManager
-from ..db.peer_store import PeerStore
+from p2p0mq.peer_store import PeerStore
 from ..security import SecurityManager
 from ..utils.thread.koloopthread import KoLoopThread
-from .base import BaseApp
 from .client import Sender
 from .server import Receiver
 
 logger = logging.getLogger('p2p0mq.app')
 
 
-class TheApp(BaseApp, PeerStore, SecurityManager,
+class TheApp(PeerStore, SecurityManager,
              ConcernsManager, Router, KoLoopThread):
     """
     The base of our application.
@@ -115,8 +114,7 @@ class TheApp(BaseApp, PeerStore, SecurityManager,
         logger.log(TRACE_FUNC, "Application %r starts execute()", self.uuid)
         self.sync_database()
 
-        for concern in self.concerns.values():
-            concern.execute()
+        self.execute_concerns()
 
         replies = self.process_requests(
             self.receiver.typed_queues[MESSAGE_TYPE_REQUEST])
@@ -166,7 +164,7 @@ class TheApp(BaseApp, PeerStore, SecurityManager,
             logger.log(TRACE_NET, "SENDER: %r", message)
 
     def stable(self):
-        """ Tell if the application """
+        """ Tell if the application is started. """
         return (
             self.receiver is not None and
             self.sender is not None and
@@ -177,5 +175,10 @@ class TheApp(BaseApp, PeerStore, SecurityManager,
         )
 
     def wait_to_stabilize(self):
-        while not self.stable():
+        """ Wait for the application to became stable. """
+        for i in range(STABILIZE_TIMEOUT*2):
+            if self.stable():
+                return True
             sleep(0.5)
+        return False
+

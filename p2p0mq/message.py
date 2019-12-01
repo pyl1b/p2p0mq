@@ -83,7 +83,7 @@ class Message(object):
             handler=handler if handler is not None else self.handler,
             **kwargs
         )
-        result.time_to_live = time_to_live
+        result.time_to_live = time() + time_to_live
         return result
 
     def encode(self, app_uuid):

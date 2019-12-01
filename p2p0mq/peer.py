@@ -21,7 +21,7 @@ CONNECTED = 3
 # We cannot connect to this peer directly but we can
 # send messages to it by using the via parameter.
 ROUTED = 4
-# The heart beat dis not returned in time. We were at some
+# The heart beat was not returned in time. We were at some
 # point in the past connected to this peer.
 UNREACHABLE = -1
 # We attempted a connection to this peer and we failed.
@@ -32,9 +32,64 @@ NO_CONNECTION = -2
 class Peer(object):
     """
     A peer represented in our application.
+
+    Attributes:
+        uuid:
+            The unique identification for this peer.
+        host (str):
+            The host where this peer resides.
+        port (int):
+            The port of this peer on the host.
+        db_id:
+            The id of the peer in the database.
+        conn_state:
+            The state of the connection with this peer. Can be;
+
+            * *INITIAL* (1): the state of the peer upon creation;
+            * *CONNECTING* (2): after the socket was connected and a
+            hello message has been send to the peer;
+            * *CONNECTED* (3): the client has returned the hello message
+            and heart-beats are returned in aa timely fashion;
+            * *ROUTED* (4): we can reach this peer but we need to use
+            the via option;
+            * *UNREACHABLE* (-1): The heart beat was not returned in time.
+            We were at some point in the past connected to this peer;
+            * *NO_CONNECTION* (-2): We attempted a connection to this peer and
+            we failed. Unreachable peers will decay to this state after
+            some time.
+
+        via:
+            When the state is *ROUTED* the messages destined to this peer
+            will be sent to this address.
+
+        next_heart_beat_time:
+            The time when next heart beat has been scheduled.
+        last_heart_beat_time:
+            Last time we have received a heart beat from this peer.
+        slow_heart_beat_down:
+            When we're not seeing replies from a peer we gradually
+            increase the time between heart beats. This parameter
+            holds the number of seconds to increase at next faaailure.
+        next_ask_around_time:
+            Next time when we're going to ask peers about this peer.
+        last_ask_around_time:
+            Last time we have asked about this peer.
+
     """
     def __init__(self, uuid=None, host=None, port=None, db_id=None):
-        """ Constructor. """
+        """
+        Constructor.
+
+        Arguments:
+            uuid:
+                The unique identification for this peer.
+            host (str):
+                The host where this peer resides.
+            port (int):
+                The port of this peer on the host.
+            db_id:
+                The id of the peer in the database.
+        """
         super(Peer, self).__init__()
         self.uuid = uuid
         self.host = host
@@ -181,13 +236,29 @@ class Peer(object):
             min(self.slow_heart_beat_down + HEART_BEAT_SLOW_DOWN,
                 HEART_BEAT_MAX_INTERVAL)
 
-    def become_connected(self, direct, via, app):
-        if direct:
+    def become_connected(self, message, app):
+        """
+        Sets the status of the peer based on the data in the message.
+
+        The method is used by the heart-beat and connector concerns
+        to update the state of the peer as part of the processing of
+        incoming messages. We set the state to either CONNECTED or ROUTED
+        based on the path the message arrived on and will reset
+        the heart-beat timer.
+
+        Arguments:
+            message (Message):
+                The message to inspect.
+            app (TheApp):
+                Manager instance.
+        """
+        assert message.source == self.uuid
+        if message.source == message.previous_hop:
             self.state_connected = True
             self.via = None
             logger.debug("%s is now a direct connection", self)
         else:
             self.state_routed = True
-            self.via = via
+            self.via = message.previous_hop
             logger.debug("%s is now a proxied connection", self)
         self.reset_heart_beat(app)

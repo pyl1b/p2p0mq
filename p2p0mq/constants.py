@@ -37,6 +37,10 @@ HEART_BEAT_MAX_INTERVAL = 10
 UNRESPONSIVE_THRESHOLD = HEART_BEAT_INTERVAL*10
 # Time interval after last heart-beat when the peer is declared disconnected.
 NO_CONNECTION_THRESHOLD = 240
+# Time interval after which we re-attempt to connect a peer in NO_CONNECTION
+# state.
+UNRESPONSIVE_RECONNECT_WAIT = 120
+
 
 # ---- Other Time Constants ----
 # Time between consecutive database sync calls.
@@ -65,3 +69,5 @@ LOOP_END = False
 RECEIVE_LIMIT_PER_LOOP = 10
 # The maximum number of messages the application processes in a loop.
 PROCESS_LIMIT_PER_LOOP = RECEIVE_LIMIT_PER_LOOP + 2
+# The maximum number of seconds to wait for th application to stabilize.
+STABILIZE_TIMEOUT = 4
