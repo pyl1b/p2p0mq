@@ -21,7 +21,7 @@ from zmq.utils.monitor import recv_monitor_message
 
 from p2p0mq.app.client import Sender
 from p2p0mq.app.server import Receiver
-from p2p0mq.app.theapp import TheApp
+from p2p0mq.app.local_peer import LocalPeer
 
 logger = logging.getLogger('tests.p2p0mq.net_comm')
 # handler = logging.StreamHandler()
@@ -33,7 +33,7 @@ logger = logging.getLogger('tests.p2p0mq.net_comm')
 class TestNetCommNoAuth(TestCase):
     def setUp(self):
 
-        self.app = MagicMock(spec=TheApp)
+        self.app = MagicMock(spec=LocalPeer)
         self.app.no_encryption = True
         self.app._uuid = uuid.uuid4().hex.encode()
         self.app.uuid = self.app._uuid

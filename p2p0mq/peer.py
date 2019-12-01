@@ -249,7 +249,7 @@ class Peer(object):
         Arguments:
             message (Message):
                 The message to inspect.
-            app (TheApp):
+            app (LocalPeer):
                 Manager instance.
         """
         assert message.source == self.uuid

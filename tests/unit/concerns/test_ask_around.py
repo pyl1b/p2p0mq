@@ -9,7 +9,7 @@ import threading
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from p2p0mq.app.theapp import TheApp
+from p2p0mq.app.local_peer import LocalPeer
 from p2p0mq.concerns.ask_around import AskAroundConcern
 from p2p0mq.constants import ASK_AROUND_INTERVAL, MESSAGE_TYPE_REQUEST, SPEED_FAST
 from p2p0mq.message import Message
@@ -20,7 +20,7 @@ logger = logging.getLogger('tests.p2p0mq.ask')
 
 class TestAskAroundConcern(TestCase):
     def setUp(self):
-        self.app = MagicMock(spec=TheApp)
+        self.app = MagicMock(spec=LocalPeer)
         self.testee = AskAroundConcern(app=self.app)
         self.app.tick = 11
         self.app.uuid = 99

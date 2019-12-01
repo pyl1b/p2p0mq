@@ -31,14 +31,14 @@ class Receiver(KoNetThread):
     > at any moment, but not both.
     > The role is independent of bind/connect direction.
 
-    To become a CURVE server, the application sets the ZMQ_CURVE_SERVER
+    To become a CURVE server, the local peer sets the ZMQ_CURVE_SERVER
     option on the socket, and then sets the ZMQ_CURVE_SECRETKEY option
     to provide the socket with its long-term secret key.
-    The application does not provide the socket with its long-term public key,
+    The local peer does not provide the socket with its long-term public key,
     which is used only by clients.
 
     The receiver listens to messages and creates messages out of them.
-    The messages are then placed in the queue where the application
+    The messages are then placed in the queue where the local peer
     will pick them up.
 
     For now the receiver understands two kinds of messages: requests and
@@ -81,13 +81,13 @@ class Receiver(KoNetThread):
         # existing ØMQ infrastructure (message queues,
         # forwarding devices) shall be identified with a
         # specific application and persist across multiple
-        # runs of the application.
+        # runs of the local peer.
         #
         # If the socket has no identity, each run of an
         # application is completely separate from other runs.
         # However, with identity set the socket shall re-use
         # any existing ØMQ infrastructure configured by the
-        # previous run(s). Thus the application may receive
+        # previous run(s). Thus the local peer may receive
         # messages that were sent in the meantime, message
         # queue limits shall be shared with previous run(s)
         # and so on.
@@ -102,7 +102,7 @@ class Receiver(KoNetThread):
             server_public, server_secret = zmq.auth.load_certificate(
                 self.app.private_file)
 
-            # To become a CURVE server, the application sets the ZMQ_CURVE_SERVER
+            # To become a CURVE server, the local peer sets the ZMQ_CURVE_SERVER
             # option on the socket,
             new_socket.curve_server = True
 
@@ -110,7 +110,7 @@ class Receiver(KoNetThread):
             # to provide the socket with its long-term secret key.
             new_socket.curve_secretkey = server_secret
 
-            # The application does not provide the socket with
+            # The local peer does not provide the socket with
             # its long-term public key, which is used only by clients.
             # socket.curve_publickey = server_public
 

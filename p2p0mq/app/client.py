@@ -22,7 +22,6 @@ from p2p0mq.utils.thread.netthread import KoNetThread
 logger = logging.getLogger('p2p0mq.app.c')
 
 
-
 class Sender(KoNetThread):
     """
     A thread that sends requests and information
@@ -34,9 +33,9 @@ class Sender(KoNetThread):
     > at any moment, but not both.
     > The role is independent of bind/connect direction.
 
-    To become a CURVE client, the application sets the ZMQ_CURVE_SERVERKEY
+    To become a CURVE client, the local peer sets the ZMQ_CURVE_SERVERKEY
     option with the long-term public key of the server it intends to
-    connect to, or accept connections from, next. The application then
+    connect to, or accept connections from, next. The local peer then
     sets the ZMQ_CURVE_PUBLICKEY and ZMQ_CURVE_SECRETKEY
     options with its client long-term key pair.
 
@@ -78,13 +77,13 @@ class Sender(KoNetThread):
         # existing ØMQ infrastructure (message queues,
         # forwarding devices) shall be identified with a
         # specific application and persist across multiple
-        # runs of the application.
+        # runs of the local peer.
         #
         # If the socket has no identity, each run of an
         # application is completely separate from other runs.
         # However, with identity set the socket shall re-use
         # any existing ØMQ infrastructure configured by the
-        # previous run(s). Thus the application may receive
+        # previous run(s). Thus the local peer may receive
         # messages that were sent in the meantime, message
         # queue limits shall be shared with previous run(s)
         # and so on.
@@ -101,14 +100,14 @@ class Sender(KoNetThread):
                 self.app.private_file)
 
             # http://api.zeromq.org/4-1:zmq-curve
-            # To become a CURVE client, the application sets the
+            # To become a CURVE client, the local peer sets the
             # ZMQ_CURVE_SERVERKEY option with the long-term public key
             # of the server it intends to connect to, or accept
             # connections from, next.
             # new_socket.curve_serverkey = \
             #     str(peer_data["serverkey"]).encode('ascii')
 
-            # The application then sets the ZMQ_CURVE_PUBLICKEY and
+            # The local peer then sets the ZMQ_CURVE_PUBLICKEY and
             # ZMQ_CURVE_SECRETKEY options with its client long-term key pair.
             # Set long term secret key (for server)
             new_socket.curve_publickey = client_public
@@ -143,7 +142,7 @@ class Sender(KoNetThread):
         put it back in the queue until the message expires).
 
         Returns:
-            The message to be enqueueud or None. This is not a
+            The message to be enqueued or None. This is not a
             `(PRIORITY, message)` format.
         """
         try:

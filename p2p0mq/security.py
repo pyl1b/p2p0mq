@@ -150,7 +150,7 @@ class SecurityManager(object):
 
         This method should be written defensively, as the environment
         might not be fully set (an exception in
-        :meth:`p2p0mq.app.theapp.TheApp.create` does not prevent
+        :meth:`p2p0mq.app.theapp.LocalPeer.create` does not prevent
         this method from being executed).
         """
         if self.auth_thread is not None:

@@ -67,7 +67,7 @@ LOOP_END = False
 # ---- Loop limits ----
 # The maximum number of messages the sender receives in a loop.
 RECEIVE_LIMIT_PER_LOOP = 10
-# The maximum number of messages the application processes in a loop.
+# The maximum number of messages the local peer processes in a loop.
 PROCESS_LIMIT_PER_LOOP = RECEIVE_LIMIT_PER_LOOP + 2
 # The maximum number of seconds to wait for th application to stabilize.
 STABILIZE_TIMEOUT = 4

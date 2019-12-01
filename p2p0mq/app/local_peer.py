@@ -23,10 +23,10 @@ from .server import Receiver
 logger = logging.getLogger('p2p0mq.app')
 
 
-class TheApp(PeerStore, SecurityManager,
-             ConcernsManager, Router, KoLoopThread):
+class LocalPeer(PeerStore, SecurityManager,
+                ConcernsManager, Router, KoLoopThread):
     """
-    The base of our application.
+    Resource management class that exposes a single local peer.
 
     This class can be executed both as a thread and as an
     online worker if current thread has nothing to do.
@@ -43,7 +43,7 @@ class TheApp(PeerStore, SecurityManager,
                  zmq_monitor=False,
                  *args, **kwargs):
         """ Constructor. """
-        super(TheApp, self).__init__(*args, **kwargs)
+        super(LocalPeer, self).__init__(*args, **kwargs)
         self.name = 'p2p0mq.A.th' if self.uuid is None \
             else ('%s-p2p0mq.A.th' % self.uuid[-4:-1].decode("utf-8"))
 
@@ -67,18 +67,18 @@ class TheApp(PeerStore, SecurityManager,
         logger.debug('application constructed')
 
     def create(self):
-        """ Starts the application. """
-        logger.debug("The application %r is being created...", self.uuid)
+        """ Starts the local peer. """
+        logger.debug("The local peer %r is being created...", self.uuid)
         self.start_db()
         self.prepare_cert_store(self.uuid)
         self.start_auth(self.zmq_context)
         self.start_concerns()
         self.receiver.start()
         self.sender.start()
-        logger.debug("The application %r was created", self.uuid)
+        logger.debug("The local peer %r was created", self.uuid)
 
     def terminate(self):
-        """ Terminates the application.
+        """ Terminates the local peer.
 
         This method is not to be called directly by the user of the class.
 
@@ -86,7 +86,7 @@ class TheApp(PeerStore, SecurityManager,
         might not be fully set (an exception in create() does not prevent
         this method from being executed).
         """
-        logger.debug("The application %r is being terminated...", self.uuid)
+        logger.debug("The local peer %r is being terminated...", self.uuid)
 
         if self.receiver is not None:
             self.receiver.stop.set()
@@ -107,10 +107,10 @@ class TheApp(PeerStore, SecurityManager,
         self.terminate_concerns()
         self.terminate_auth()
         self.terminate_db()
-        logger.debug("The applications %r was terminated", self.uuid)
+        logger.debug("The local peers %r was terminated", self.uuid)
 
     def execute(self):
-        """ A single step in the application loop. """
+        """ A single step in the local peer loop. """
         logger.log(TRACE_FUNC, "Application %r starts execute()", self.uuid)
         self.sync_database()
 
@@ -164,7 +164,7 @@ class TheApp(PeerStore, SecurityManager,
             logger.log(TRACE_NET, "SENDER: %r", message)
 
     def stable(self):
-        """ Tell if the application is started. """
+        """ Tell if the local peer is started. """
         return (
             self.receiver is not None and
             self.sender is not None and
@@ -175,7 +175,7 @@ class TheApp(PeerStore, SecurityManager,
         )
 
     def wait_to_stabilize(self):
-        """ Wait for the application to became stable. """
+        """ Wait for the local peer to became stable. """
         for i in range(STABILIZE_TIMEOUT*2):
             if self.stable():
                 return True

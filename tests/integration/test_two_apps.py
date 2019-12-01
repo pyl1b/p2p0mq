@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 
 import zmq
 
-from p2p0mq.app.theapp import TheApp
+from p2p0mq.app.local_peer import LocalPeer
 from p2p0mq.peer import Peer
 
 LOG_LEVEL_HERE = logging.DEBUG # 1 # logging.WARNING #
@@ -40,7 +40,7 @@ logging.getLogger('p2p0mq.concerns').setLevel(logging.WARNING)
 
 def make_app(tag, no_encryption=True):
     label = '%d~%d~%d~%d' % (tag, tag, tag, tag)
-    app = TheApp(
+    app = LocalPeer(
         db_file_path=tempfile.mktemp(prefix='ko-%s-db_file_path-' % label),
         private_cert_dir=tempfile.mkdtemp(prefix='ko-%s-private_cert_dir-' % label),
         public_cert_dir=tempfile.mkdtemp(prefix='ko-%s-public_cert_dir-' % label),

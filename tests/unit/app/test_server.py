@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 import zmq
 
 from p2p0mq.app.server import Receiver
-from p2p0mq.app.theapp import TheApp
+from p2p0mq.app.local_peer import LocalPeer
 from p2p0mq.constants import MESSAGE_TYPE_ROUTE, MESSAGE_TYPE_REQUEST, MESSAGE_TYPE_REPLY
 from p2p0mq.message_queue.slow import SlowMessageQueue
 
@@ -25,7 +25,7 @@ logger = logging.getLogger('tests.p2p0mq.server')
 
 class TestTestee(TestCase):
     def setUp(self):
-        self.app = MagicMock(spec=TheApp)
+        self.app = MagicMock(spec=LocalPeer)
         self.app._uuid = uuid.uuid4().hex.encode()
         self.app.uuid = self.app._uuid
 

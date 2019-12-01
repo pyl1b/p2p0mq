@@ -14,7 +14,7 @@ from unittest.mock import MagicMock
 
 from umsgpack import packb
 
-from p2p0mq.app.theapp import TheApp
+from p2p0mq.app.local_peer import LocalPeer
 from p2p0mq.concerns.base import Concern
 from p2p0mq.constants import MESSAGE_TYPE_REQUEST, MESSAGE_TYPE_REPLY
 from p2p0mq.message import Message
@@ -24,7 +24,7 @@ logger = logging.getLogger('tests.p2p0mq.message')
 
 class TestTestee(TestCase):
     def setUp(self):
-        self.app = MagicMock(spec=TheApp)
+        self.app = MagicMock(spec=LocalPeer)
         self.app.tick = 111
         self.handler = MagicMock(spec=Concern)
         self.testee = Message(

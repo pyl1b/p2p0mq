@@ -24,10 +24,10 @@ class Router(object):
 
     def process_routes(self, queue):
         """
-        Processing the routing requests during the application loop.
+        Processing the routing requests during the local peer loop.
 
         The messages that need routing are detected by the server (Receiver)
-        and placed in a distinct queue. The application then calls
+        and placed in a distinct queue. The local peer then calls
         this method to process the messages.
         """
         logger.log(TRACE, "Processing routes...")

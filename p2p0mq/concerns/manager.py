@@ -10,13 +10,13 @@ The parameter is set in the constructor and
 should be kept constant after the instance has been made part of the
 application via :meth:`~p2p0mq.concerns.base.Concern.start`.
 
-Once the application hs been started the main loop will call
+Once the local peer hs been started the main loop will call
 :meth:`~p2p0mq.concerns.base.Concern.execute`
 on the concern on each loop in the context of the app thread.
 The concern is free to add messages to application queue but
 it should not send them directly.
 
-The application builds maps for concerns so that, when a request or
+The local peer builds maps for concerns so that, when a request or
 reply arrives the appropriate method will be called in the context
 of the sender/receiver thread.
 
@@ -55,7 +55,7 @@ Termination of the manager is equally simple, with
 :meth:`~p2p0mq.concerns.base.Concern.terminate` method of each
 concern being called.
 
-In the context of the application thread, on each loop, the manager
+In the context of the local peer thread, on each loop, the manager
 participates with:
 
 * :meth:`~p2p0mq.concerns.manager.ConcernsManager.execute_concerns` which \
@@ -73,7 +73,7 @@ input from application level queues. On each loop a number of messages
 the corresponding :class:`~p2p0mq.concerns.base.Concern` will be
 located and asked to :meth:`~p2p0mq.concerns.base.Concern.process_reply`
 or to :meth:`~p2p0mq.concerns.base.Concern.process_request`. Either
-can return a message which the application will enqueue (this is just
+can return a message which the local peer will enqueue (this is just
 a convenience feature; the concern can enqueue the messages itself
 and return `None`).
 
@@ -186,7 +186,7 @@ logger = logging.getLogger('p2p0mq.concerns')
 
 class ConcernsManager(object):
     """
-    Manages the concerns inside the application.
+    Manages the concerns inside the local peer.
 
     Attributes:
         concerns (dict):
@@ -202,7 +202,7 @@ class ConcernsManager(object):
         """ Constructor. """
         super(ConcernsManager, self).__init__(*args, **kwargs)
 
-        # These are plugins that are hooked up into the application events.
+        # These are plugins that are hooked up into the local peer events.
         self.concerns = {}
         self.concerns_started = False
 
@@ -235,12 +235,12 @@ class ConcernsManager(object):
 
         * :class:`~p2p0mq.concerns.ask_around.AskAroundConcern`
         """
-        self.add_concern(HeartBeatConcern(self))
-        self.add_concern(ConnectorConcern(self))
+        self.add_concern(HeartBeatConcern())
+        self.add_concern(ConnectorConcern())
 
     def start_concerns(self):
         """
-        Called by the application code at startup time to install hooks.
+        Called by the local peer code at startup time to install hooks.
 
         Adding concerns after this After this point the list should not be changed.
         """
@@ -255,7 +255,7 @@ class ConcernsManager(object):
 
     def terminate_concerns(self):
         """
-        Called by the application code when the application ends.
+        Called by the local peer code when the local peer ends.
 
         This method should be written defensively, as the environment
         might not be fully set (an exception in create() does not prevent
@@ -270,7 +270,7 @@ class ConcernsManager(object):
         """
         Execute concerns.
 
-        Called on each execute step by the application.
+        Called on each execute step by the local peer.
         Call each concern's execute method in turn.
         """
         for concern in self.concerns.values():
@@ -278,7 +278,7 @@ class ConcernsManager(object):
 
     def process_requests(self, queue):
         """
-        Called on the application thread to process requests.
+        Called on the local peer thread to process requests.
 
         Requests are received by the server (Receiver) and are simply
         deposited in the queue. This function takes the requests and
@@ -288,7 +288,7 @@ class ConcernsManager(object):
 
     def process_replies(self, queue):
         """
-        Called on the application thread to process replies.
+        Called on the local peer thread to process replies.
 
         Replies are received by the server (Receiver) and are simply
         deposited in the queue. This function takes the replies and
@@ -298,7 +298,7 @@ class ConcernsManager(object):
 
     def process_common(self, queue, label, reply):
         """
-        Called on the application thread to process requests and replies.
+        Called on the local peer thread to process requests and replies.
         """
         logger.log(TRACE, "Processing %s queue", label)
 

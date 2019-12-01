@@ -12,7 +12,7 @@ from unittest import TestCase
 
 from p2p0mq.app.client import Sender
 from p2p0mq.app.server import Receiver
-from p2p0mq.app.theapp import TheApp
+from p2p0mq.app.local_peer import LocalPeer
 
 logger = logging.getLogger('tests.p2p0mq.app')
 
@@ -22,7 +22,7 @@ class TestKoNetThreadNoDb(TestCase):
         self.private_dir = tempfile.mkdtemp()
         self.public_dir = tempfile.mkdtemp()
         self.temp_cert_dir = tempfile.mkdtemp()
-        self.testee = TheApp(
+        self.testee = LocalPeer(
             config=None,
             private_cert_dir=self.private_dir,
             public_cert_dir=self.public_dir,
@@ -38,7 +38,7 @@ class TestKoNetThreadNoDb(TestCase):
             shutil.rmtree(self.temp_cert_dir)
 
     def test_init(self):
-        self.testee = TheApp(
+        self.testee = LocalPeer(
             config=None,
             private_cert_dir=self.private_dir,
             public_cert_dir=self.public_dir,

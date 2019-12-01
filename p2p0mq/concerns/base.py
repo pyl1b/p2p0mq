@@ -54,7 +54,7 @@ class Concern(object):
 
         .. note:
 
-        For concerns installed before the application has been started
+        For concerns installed before the local peer has been started
         this method is called before entering main loop.
         The sender and the receiver are not started at that time.
         """

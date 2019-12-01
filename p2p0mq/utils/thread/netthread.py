@@ -31,7 +31,7 @@ class KoNetThread(KoLoopThread):
         self.bind_address = str(bind_address)
         self.bind_port = int(bind_port) if bind_port else None
 
-        # The application where we belong to.
+        # The local peer where we belong to.
         self.app = app
 
         # The context used to create sockets.

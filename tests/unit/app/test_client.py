@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, call
 import zmq
 
 from p2p0mq.app.client import Sender
-from p2p0mq.app.theapp import TheApp
+from p2p0mq.app.local_peer import LocalPeer
 from p2p0mq.concerns.base import Concern
 from p2p0mq.constants import LOOP_CONTINUE, SPEED_MEDIUM, SPEED_FAST, SPEED_SLOW
 from p2p0mq.errors import ValidationError
@@ -30,7 +30,7 @@ logger = logging.getLogger('tests.p2p0mq.client')
 
 class TestTestee(TestCase):
     def setUp(self):
-        self.app = MagicMock(spec=TheApp)
+        self.app = MagicMock(spec=LocalPeer)
         self.app._uuid = uuid.uuid4().hex.encode()
         self.app.uuid = self.app._uuid
         self.app.no_encryption = False
@@ -89,9 +89,9 @@ class TestTestee(TestCase):
         self.app.tick = 2
         message.handler.send_failed.return_value = 'x'
         result = self.testee.send_message(message)
-        self.assertEqual(result, 'x')
+        self.assertIsNone(result)
         message.handler.message_dropped.assert_called_once_with(message)
-        message.handler.send_failed.assert_called_once()
+        message.handler.send_failed.assert_not_called()
 
         message = MagicMock(spec=Message)
         message.valid_for_send.return_value = True

@@ -151,7 +151,7 @@ class ConnectorConcern(Concern):
         This is the handler on the receiver side for connect requests.
         If we know this peer we update its details like host and port.
         If we don't, we create a new :class:`~p2p0mq.peer.Peer` and add it
-        to the application.
+        to the local peer.
 
         A new connection is attempted right away with new details if the
         state is INITIAL, NO_CONNECTION, or UNREACHABLE. For other states
