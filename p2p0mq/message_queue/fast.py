@@ -29,11 +29,12 @@ class FastMessageQueue(MessageQueue):
         with self.lock:
             if isinstance(message, (list, set, tuple)):
                 self.queue = self.queue + list(message)
-                logger.log(TRACE, "%d message(s) added to %s",
-                           len(message), self)
+                logger.log(TRACE, "%d message(s) added to %s: %r",
+                           len(message), self, message)
             else:
                 self.queue.append(message)
-                logger.log(TRACE, "1 message added to %s", self)
+                logger.log(TRACE, "1 message added to %s: %r",
+                           self, message)
 
     def dequeue(self):
         """ Returns a list of messages that should be send. """
@@ -41,8 +42,8 @@ class FastMessageQueue(MessageQueue):
             to_send = self.queue
             self.queue = []
         random.shuffle(to_send)
-        logger.log(TRACE, "%d message(s) de-queued from %s",
-                   len(to_send), self)
+        logger.log(TRACE, "%d message(s) de-queued from %s: %r",
+                   len(to_send), self, to_send)
         return to_send
 
     def empty(self):

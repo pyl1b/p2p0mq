@@ -29,18 +29,18 @@ class SlowMessageQueue(MessageQueue):
         with self.lock:
             if isinstance(message, (list, tuple, set)):
                 self.queue.extend(message)
-                logger.log(TRACE, "%d message(s) added to %s",
-                           len(message), self)
+                logger.log(TRACE, "%d message(s) added to %s: %r",
+                           len(message), self, message)
             else:
                 self.queue.append(message)
-                logger.log(TRACE, "1 message added to %s", self)
+                logger.log(TRACE, "1 message added to %s: %r", self, message)
 
     def dequeue(self):
         """ Returns a list of messages that should be send. """
         with self.lock:
             result = [self.queue.pop(0)] if len(self.queue) > 0 else []
-        logger.log(TRACE, "%d message(s) de-queued from %s",
-                   len(result), self)
+        logger.log(TRACE, "%d message(s) de-queued from %s: %r",
+                   len(result), self, result)
         return result
 
     def empty(self):

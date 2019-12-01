@@ -43,7 +43,8 @@ class RegularMessageQueue(MessageQueue):
                     self.queue[msg.to] = peer_queue
                 peer_queue.append(msg)
             self._messages_count = self._messages_count + len(message)
-        logger.log(TRACE, "%d message(s) added to %s", len(message), self)
+        logger.log(TRACE, "%d message(s) added to %s: %r",
+                   len(message), self, message)
 
     def dequeue(self):
         """ Returns a list of messages that should be send. """
@@ -53,8 +54,8 @@ class RegularMessageQueue(MessageQueue):
                 if len(queue) > 0]
             random.shuffle(result)
             self._messages_count = self._messages_count - len(result)
-            logger.log(TRACE, "%d message(s) de-queued from %s",
-                       len(result), self)
+            logger.log(TRACE, "%d message(s) de-queued from %s: %r",
+                       len(result), self, result)
             return result
 
     def empty(self):
