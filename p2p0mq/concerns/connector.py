@@ -192,6 +192,9 @@ class ConnectorConcern(Concern):
         if peer.needs_reconnect:
             logger.debug("A connect will be attempted to %s as a result "
                          "of this request", peer)
+            # Here we're sending our own message as there are two
+            # communication channels. The log will show two messages being
+            # sent to same host at the same time.
             self.connect_peer(peer)
         else:
             peer.become_connected(message, self.app)

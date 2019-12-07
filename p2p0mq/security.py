@@ -271,6 +271,13 @@ class SecurityManager(object):
             other (SecurityManager):
                 The security manager of the other peer.
         """
+        if self.no_encryption:
+            logger.error("Encryption was disabled in %s", self)
+            return
+        if other.no_encryption:
+            logger.error("Encryption was disabled in %s", other)
+            return
+
         shutil.copy(
             self.public_file,
             os.path.join(other.public_cert_dir,

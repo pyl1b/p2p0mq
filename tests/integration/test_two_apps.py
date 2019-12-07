@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Unit tests for TwoApps.
+Integration test that runs two communicating apps in parallel.
 """
 from __future__ import unicode_literals
 from __future__ import print_function

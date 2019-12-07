@@ -147,7 +147,7 @@ class Sender(KoNetThread):
         """
         try:
             logger.log(TRACE_NET, "encoding message for wire: %r", message)
-            assert message.valid_for_send(self.app)
+            assert message.valid_for_send(self.app), "%r is invalid" % message
             encoded = message.encode(self.app.uuid)
             logger.log(TRACE_PACKETS, ">>>>>>>>>>>>>>>  %r", encoded)
             self.socket.send_multipart(encoded)
