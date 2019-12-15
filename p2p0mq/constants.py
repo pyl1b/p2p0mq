@@ -14,7 +14,7 @@ __package_url__ = 'https://github.com/pyl1b/%s' % __package_name__
 
 
 # ---- Logging constants ----
-TRACE_PACKETS = 51
+TRACE_PACKETS = 1
 TRACE_FUNC = 2
 TRACE_NET = 3
 TRACE = 4
@@ -70,4 +70,4 @@ RECEIVE_LIMIT_PER_LOOP = 10
 # The maximum number of messages the local peer processes in a loop.
 PROCESS_LIMIT_PER_LOOP = RECEIVE_LIMIT_PER_LOOP + 2
 # The maximum number of seconds to wait for th application to stabilize.
-STABILIZE_TIMEOUT = 4
+STABILIZE_TIMEOUT = 8

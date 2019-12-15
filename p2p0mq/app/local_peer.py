@@ -35,6 +35,22 @@ class LocalPeer(PeerStore, SecurityManager,
 
     To see some other router-dealer patterns goto:
     - [http://hintjens.com/blog:42]
+
+    Attributes:
+        name (str):
+            The name of the thread.
+        config (dict):
+            Configuration options loaded at startup.
+        zmq_monitor (zmq.Poller):
+            Brings together all monitoring sockets.
+        zmq_context (zmq.Context):
+            The zmq resource management structure.
+        receiver (Receiver):
+            The server of the local peer. It runs on a separate thread
+            and has a distinct web address.
+        sender (Sender):
+            The client used by local peer. It runs on a separate thread
+            and has a distinct web address.
     """
     def __init__(self, config,
                  sender_address='127.0.0.1', sender_port=8341,
@@ -42,28 +58,38 @@ class LocalPeer(PeerStore, SecurityManager,
                  zmq_context=None,
                  zmq_monitor=False,
                  *args, **kwargs):
-        """ Constructor. """
+        """
+        Constructor.
+
+        Attributes:
+            sender_address (str):
+                The address where the sender should use.
+            sender_port (int):
+                The port where the sender should use.
+            receiver_address (str):
+                The address where the receiver should use.
+            receiver_port (int):
+                The port where the receiver should use.
+            zmq_context (zmq.Context):
+                The zmq resource management structure. If not provided the
+                application uses the global context.
+            zmq_monitor (bool):
+                Should we monitor the sockets and log debug information
+                about them? If `True` the constructor will create a poller in
+                `zmq_monitor` attribute.
+        """
         super(LocalPeer, self).__init__(*args, **kwargs)
         self.name = 'p2p0mq.A.th' if self.uuid is None \
             else ('%s-p2p0mq.A.th' % self.uuid[-4:-1].decode("utf-8"))
-
-        # Configuration options loaded at startup.
         self.config = config
-
-        # Should we monitor the sockets and log debug information about them?
         self.zmq_monitor = zmq.Poller() if zmq_monitor else None
-
-        # The instrument used for communication.
         self.zmq_context = zmq_context or zmq.Context.instance()
-
-        # The server (receiver) and the client (sender).
         self.receiver = Receiver(
             app=self, context=self.zmq_context,
             bind_address=receiver_address, bind_port=receiver_port)
         self.sender = Sender(
             app=self, context=self.zmq_context,
             bind_address=sender_address, bind_port=sender_port)
-
         logger.debug('application constructed')
 
     def create(self):
@@ -165,7 +191,7 @@ class LocalPeer(PeerStore, SecurityManager,
 
     def stable(self):
         """ Tell if the local peer is started. """
-        return (
+        partial = (
             self.receiver is not None and
             self.sender is not None and
             self.run_loop_counter > 4 and
@@ -173,6 +199,9 @@ class LocalPeer(PeerStore, SecurityManager,
             self.sender.run_loop_counter > 4 and
             self.next_peer_db_sync_time > self.tick
         )
+        if partial and not self.no_encryption:
+            partial = self.auth_thread is not None
+        return partial
 
     def wait_to_stabilize(self):
         """ Wait for the local peer to became stable. """

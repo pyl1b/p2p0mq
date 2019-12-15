@@ -14,6 +14,14 @@ from p2p0mq.errors import MessageValidationError
 
 logger = logging.getLogger('p2p0mq.message')
 
+next_message_id = 0
+
+
+def get_next_message_id():
+    global next_message_id
+    next_message_id = next_message_id + 1
+    return next_message_id
+
 
 class Message(object):
     """
@@ -26,6 +34,7 @@ class Message(object):
                  command=None,
                  reply=False,
                  handler=None,
+                 message_id=None,
                  time_to_live=DEFAULT_TIME_TO_LIVE,
                  **kwargs):
         """ Constructor. """
@@ -42,16 +51,17 @@ class Message(object):
             self.kind = reply
         self.payload = dict(kwargs)
         self.time_to_live = time() + time_to_live
+        self.message_id = message_id if message_id else get_next_message_id()
 
     def __str__(self):
-        return 'Message(to=%r, src=%r, cmd=%r)' % (
-            self.to, self.source, self.command)
+        return 'Message(to=%r, src=%r, cmd=%r, message_id=%r)' % (
+            self.to, self.source, self.command, self.message_id)
 
     def __repr__(self):
         return \
             'Message(' \
             'source=%r, to=%r, ph=%r, nh=%r, command=%r, ' \
-            'kind=%r, payload=%r, ttl=%r)' % (
+            'kind=%r, payload=%r, message_id=%r, ttl=%r)' % (
                 self.source,
                 self.to,
                 self.previous_hop,
@@ -59,6 +69,7 @@ class Message(object):
                 self.command,
                 self.kind,
                 self.payload,
+                self.message_id,
                 self.time_to_live
             )
 
@@ -70,6 +81,7 @@ class Message(object):
                      command=None,
                      reply=True,
                      handler=None,
+                     message_id=None,
                      time_to_live=DEFAULT_TIME_TO_LIVE,
                      **kwargs):
         """ Creates a reply to the sender of this message. """
@@ -81,6 +93,7 @@ class Message(object):
             command=command if command is not None else self.command,
             reply=reply,
             handler=handler if handler is not None else self.handler,
+            message_id=message_id if message_id else self.message_id,
             **kwargs
         )
         result.time_to_live = time() + time_to_live
@@ -97,17 +110,19 @@ class Message(object):
         if self.source is None:
             self.source = app_uuid
 
+        # TODO: BUG self.to if self.to != self.to else b''
         return \
             self.next_hop, \
             self.source if self.source != app_uuid else b'', \
-            self.to if self.to != self.to else b'', \
+            self.to if self.to != self.next_hop else b'', \
             bytes([self.kind]), \
             self.command, \
+            packb(self.message_id), \
             packb(self.payload)
 
     @staticmethod
     def parse(raw_data, app_uuid):
-        if len(raw_data) != 6:
+        if len(raw_data) != 7:
             logger.error("Received malformed message (%d parts)",
                          len(raw_data))
             logger.debug("Offending message was: %r", raw_data)
@@ -120,25 +135,59 @@ class Message(object):
             to=raw_data[2] if len(raw_data[2]) != 0 else app_uuid,
             reply=raw_data[3][0],
             command=raw_data[4],
+            message_id=unpackb(raw_data[5]),
         )
-        message.payload = unpackb(raw_data[5])
+        message.payload = unpackb(raw_data[6])
         return message
 
-    def valid_for_send(self, app):
+    def valid_for_send(self, app, verbose=True):
         """
         Makes sure that this message has required fields for
-        sending them by the sender.
+        sending it by the sender.
         """
-        return (
-                (self.to is not None) and
-                (self.next_hop is not None) and
-                (self.source is not None) and
-                (self.command is not None) and
-                (self.handler is not None) and
-                (self.kind is not None) and
-                (self.time_to_live is not None) and
-                (self.time_to_live >= app.tick)
-        )
+        if verbose:
+            if self.to is None:
+                logger.error("`to` field is not filled in")
+                return False
+            # if self.next_hop is None:
+            #     logger.error("`next_hop` field is not filled in")
+            #     return False
+            if self.source is None:
+                logger.error("`source` field is not filled in")
+                return False
+            if self.command is None:
+                logger.error("`command` field is not filled in")
+                return False
+            if self.handler is None:
+                logger.error("`handler` field is not filled in")
+                return False
+            if self.kind is None:
+                logger.error("`kind` field is not filled in")
+                return False
+            if self.message_id is None:
+                logger.error("`message_id` field is not filled in")
+                return False
+            if self.time_to_live is None:
+                logger.error("`time_to_live` field is not filled in")
+                return False
+            if self.time_to_live < app.tick:
+                logger.error("`time_to_live` is %r, but should be in the "
+                             "future relative to `app.tick` = %r",
+                             self.time_to_live, app.tick)
+                return False
+            return True
+        else:
+            return (
+                    (self.to is not None) and
+                    # (self.next_hop is not None) and
+                    (self.source is not None) and
+                    (self.command is not None) and
+                    (self.handler is not None) and
+                    (self.kind is not None) and
+                    (self.message_id is not None) and
+                    (self.time_to_live is not None) and
+                    (self.time_to_live >= app.tick)
+            )
 
     @staticmethod
     def validate_messages_for_send(message, app):

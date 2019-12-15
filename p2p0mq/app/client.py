@@ -154,7 +154,7 @@ class Sender(KoNetThread):
             message.handler.message_sent(message)
             return None
 
-        except (zmq.error.ZMQError, KeyError) as exc:
+        except (zmq.error.ZMQError, KeyError, TypeError) as exc:
 
             logger.log(TRACE, "Sender failed to send message",
                        exc_info=True)

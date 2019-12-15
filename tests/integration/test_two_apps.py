@@ -64,14 +64,14 @@ def end_app(app):
     if app.is_alive():
         app.join()
     app.zmq_context.destroy()
-    # if os.path.isfile(app.db_file_path):
-    #     os.remove(app.db_file_path)
-    # if os.path.isdir(app.private_cert_dir):
-    #     shutil.rmtree(app.private_cert_dir)
-    # if os.path.isdir(app.public_cert_dir):
-    #     shutil.rmtree(app.public_cert_dir)
-    # if os.path.isdir(app.temp_cert_dir):
-    #     shutil.rmtree(app.temp_cert_dir)
+    if os.path.isfile(app.db_file_path):
+        os.remove(app.db_file_path)
+    if os.path.isdir(app.private_cert_dir):
+        shutil.rmtree(app.private_cert_dir)
+    if os.path.isdir(app.public_cert_dir):
+        shutil.rmtree(app.public_cert_dir)
+    if os.path.isdir(app.temp_cert_dir):
+        shutil.rmtree(app.temp_cert_dir)
 
 
 class TestTestee(TestCase):

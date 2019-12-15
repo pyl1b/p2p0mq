@@ -105,7 +105,18 @@ class PeerStore(object):
             has been created.
     """
     def __init__(self, db_file_path=None, app_uuid=None, *args, **kwargs):
-        """ Constructor. """
+        """
+        Constructor.
+
+        Arguments:
+            db_file_path (str):
+                The path of the local sqlite database used for peer
+                persistence, among others.
+        app_uuid:
+            Unique identifier of the local peer. If not set a unique id will
+            be generated at a later time.
+
+        """
         super(PeerStore, self).__init__(*args, **kwargs)
         self.db_file_path = db_file_path
         self.peers = {}

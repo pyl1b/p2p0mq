@@ -16,6 +16,11 @@ logger = logging.getLogger('p2p0mq')
 class Router(object):
     """
     Manages the routing.
+
+    Attributes:
+        default_route:
+            The id of the peer to which messages that cannot be routed
+            are sent.
     """
     def __init__(self, *args, **kwargs):
         """ Constructor. """

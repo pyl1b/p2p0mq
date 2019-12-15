@@ -115,6 +115,7 @@ class Receiver(KoNetThread):
             # socket.curve_publickey = server_public
 
         address = self.address.replace('0.0.0.0', '*')
+        logger.log(TRACE, "Attempting to bind to %r...", address)
         new_socket.bind(address)
         logger.debug("Receiver bound to %s", address)
 

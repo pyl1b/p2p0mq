@@ -45,6 +45,8 @@ class ConnectorConcern(Concern):
         # Filter peers that we have send a connect request in previous loops
         # but we haven't seen a reply, yet.
         if peer.next_heart_beat_time is not None and first:
+            logger.log(TRACE, "%s is waiting for a reply until %r",
+                       peer, peer.next_heart_beat_time)
             return
 
         # Compose the message.
@@ -64,9 +66,15 @@ class ConnectorConcern(Concern):
             # Compute the timeout.
             peer.next_heart_beat_time = self.app.tick + UNRESPONSIVE_THRESHOLD
             peer.slow_heart_beat_down = 0
+            logger.log(TRACE, "First message composed for connect "
+                              "attempt to %s: %r; will wait until %r",
+                       peer, message, peer.next_heart_beat_time)
         else:
             # Take into consideration the history of the peer.
             peer.schedule_heart_beat(self.app)
+            logger.log(TRACE, "Message composed for subsequent connect "
+                              "attempt to %s: %r; will wait until %r",
+                       peer, message, peer.next_heart_beat_time)
 
         # We directly enqueue the message.
         self.app.sender.connection_queue.enqueue({peer: message})
@@ -81,6 +89,9 @@ class ConnectorConcern(Concern):
         """
         if peer.next_heart_beat_time < self.app.tick:
             self.connect_peer(peer, first=False)
+        else:
+            logger.log(TRACE, "Reconnect time for %s will be at %r, now is %r",
+                       peer, peer.next_heart_beat_time, self.app.tick)
 
     def connecting_peer(self, peer):
         """
@@ -97,6 +108,9 @@ class ConnectorConcern(Concern):
         """
         if peer.next_heart_beat_time < self.app.tick:
             self.declare_no_connection(peer)
+        else:
+            logger.log(TRACE, "%s is connecting (has until %r, now is %r)",
+                       peer, peer.next_heart_beat_time, self.app.tick)
 
     def declare_no_connection(self, peer):
         """
@@ -113,6 +127,8 @@ class ConnectorConcern(Concern):
         peer.last_heart_beat_time = self.app.tick
         peer.next_heart_beat_time = \
             peer.last_heart_beat_time + UNRESPONSIVE_RECONNECT_WAIT
+        logger.debug("Cannot connect to %s; will attempt again after %r",
+                     peer, peer.next_heart_beat_time)
 
     def execute(self):
         """
@@ -135,6 +151,8 @@ class ConnectorConcern(Concern):
 
                 # Skip peers that have no chance at connecting.
                 if peer.host is None:
+                    logger.log(TRACE, "%s will not be connected as it "
+                                      "doens't have a host set", peer)
                     continue
 
                 if peer.state_connecting:

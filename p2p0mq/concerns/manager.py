@@ -246,6 +246,17 @@ class ConcernsManager(object):
         """
         if len(self.concerns) == 0:
             self.add_all_library_concerns()
+            logger.debug("default concerns loaded at startup because the list "
+                         "of concerns was empty at startup")
+        else:
+            if b'hb' not in self.concerns:
+                logger.debug("heart beat not present at startup "
+                             "(it is added automatically only if the "
+                             "list of concerns is empty at startup)")
+            if b'hello' not in self.concerns:
+                logger.debug("connector not present at startup"
+                             "(it is added automatically only if the "
+                             "list of concerns is empty at startup)")
 
         for concern in self.concerns.values():
             logger.debug("Concern %s is being started", concern)

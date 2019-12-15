@@ -28,7 +28,7 @@ class KoNetThread(KoLoopThread):
         super(KoNetThread, self).__init__(*args, **kwargs)
 
         # Where we bind to.
-        self.bind_address = str(bind_address)
+        self.bind_address = str(bind_address) if bind_address else None
         self.bind_port = int(bind_port) if bind_port else None
 
         # The local peer where we belong to.

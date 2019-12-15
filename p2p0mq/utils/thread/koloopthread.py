@@ -17,6 +17,20 @@ logger = logging.getLogger('p2p0mq.thread')
 class KoLoopThread(KoThread):
     """
     A thread that implements an inner loop.
+
+    Attributes:
+        stop (threading.Event):
+            An event that is checked on each thread step. If found set the
+            main lop is terminated.
+        sleep (threading.Event):
+            Event used for sleeping. Instead of using `sleep()` directly
+            we use an event that has the added benefit that code in a step
+            can prevent the main loop from sleeping.
+        tick (float):
+            The time stamp for current loop.
+        run_loop_counter (int):
+            Counts the number of times main loop has been entered. First loop
+            will see `run_loop_counter == 0`.
     """
     def __init__(self, *args, **kwargs):
         """ Constructor. """
@@ -30,7 +44,6 @@ class KoLoopThread(KoThread):
         # by setting this event.
         self.sleep = threading.Event()
 
-        # The time stamp for current loop.
         self.tick = None
 
         # The index of current loop
