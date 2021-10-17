@@ -122,3 +122,4 @@ class TestTestee(TestCase):
         sleep(5)
 
         self.assertEqual(len(self.testee2.peers), 1)
+
